@@ -344,8 +344,53 @@ class AIModelConfig:
 # Instâncias Globais Singleton para Importação Direta
 # ==============================================================================
 PATHS = DataPathsConfig()
+PATHS.ensure_directories()
+
 STORE_METADATA = StoreMetadataConfig()
 PAYMENT_RULES = PaymentRulesConfig()
 SHIPPING_RULES = ShippingRulesConfig()
 AFTER_SALES_POLICY = AfterSalesPolicyConfig()
 AI_CONFIG = AIModelConfig()
+
+# ==============================================================================
+# Aliases de Compatibilidade Direta para Módulos de Dados, RAG, Tools e Agente
+# ==============================================================================
+BASE_DIR: Path = PATHS.root_dir
+DATA_DIR: Path = PATHS.data_dir
+RAW_DATA_DIR: Path = PATHS.raw_dir
+PROCESSED_DATA_DIR: Path = PATHS.processed_dir
+
+CATEGORIES_CSV: Path = PATHS.categories_csv
+CUSTOMERS_CSV: Path = PATHS.customers_csv
+ORDERS_CSV: Path = PATHS.orders_csv
+ORDER_ITEMS_CSV: Path = PATHS.order_items_csv
+PRODUCTS_CSV: Path = PATHS.products_csv
+PROMOTIONS_CSV: Path = PATHS.promotions_csv
+POLICIES_PDF: Path = PATHS.policies_pdf
+
+DB_PATH: Path = PATHS.sqlite_db_path
+CHROMA_DIR: Path = PATHS.chroma_db_dir
+AUDIT_REPORT_PATH: Path = PATHS.audit_report_path
+HANDOFF_LOG_PATH: Path = PATHS.handoff_log_path
+
+GEMINI_API_KEY: str = AI_CONFIG.api_key
+DEFAULT_MODEL_NAME: str = AI_CONFIG.llm_model
+EMBEDDING_MODEL_NAME: str = AI_CONFIG.embedding_model
+
+STORE_INFO = {
+    "name": STORE_METADATA.nome_fantasia,
+    "legal_name": STORE_METADATA.razao_social,
+    "cnpj": STORE_METADATA.cnpj,
+    "address": STORE_METADATA.endereco_completo,
+    "city": STORE_METADATA.cidade,
+    "state": STORE_METADATA.uf,
+    "cep": STORE_METADATA.cep,
+    "phone": STORE_METADATA.telefone_principal,
+    "whatsapp": STORE_METADATA.whatsapp_atendimento,
+    "email": STORE_METADATA.email_contato,
+    "business_hours": {
+        "weekdays": "09:00 às 18:00 (Segunda a Sexta-feira)",
+        "saturday": "09:00 às 13:00 (Sábado)",
+        "sunday_and_holidays": "Fechado",
+    },
+}

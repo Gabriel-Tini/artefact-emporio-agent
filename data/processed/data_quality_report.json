@@ -1,0 +1,107 @@
+{
+  "generated_at": "2026-11-04T19:50:10.843513",
+  "database_file": "C:\\Dev\\Artefact Agent\\data\\processed\\emporio.db",
+  "metrics": {
+    "total_categories": 9,
+    "total_customers": 50,
+    "total_products": 65,
+    "approved_products": 58,
+    "quarantined_products": 7,
+    "total_orders": 20,
+    "total_order_items": 22,
+    "total_promotions": 25,
+    "active_promotions": 4,
+    "sqlite_integrity_check": "ok",
+    "foreign_key_violations": 0
+  },
+  "quarantined_products": [
+    {
+      "product_id": 135,
+      "name": "Music Man Bass 1X Electric Bass",
+      "category": "Baixos",
+      "price_brl": 8732.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Music Man' mas Descrição corresponde a 'Fender'"
+      ]
+    },
+    {
+      "product_id": 136,
+      "name": "Ibanez Bass 2X Electric Bass",
+      "category": "Baixos",
+      "price_brl": 441.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Ibanez' mas Descrição corresponde a 'Fender'",
+        "ANOMALIA_PRECO_CATEGORIA: Contrabaixo elétrico listado por R$ 441.00 (valor incompatível com a categoria e especificações em Ash/Maple)"
+      ]
+    },
+    {
+      "product_id": 137,
+      "name": "Yamaha Bass 3X Electric Bass",
+      "category": "Baixos",
+      "price_brl": 11445.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Yamaha' mas Descrição corresponde a 'Ibanez'",
+        "CONFLITO_ESPECIFICACAO_CORDAS: Descrição indica 5 cordas mas Specs define 4 cordas"
+      ]
+    },
+    {
+      "product_id": 139,
+      "name": "Bateria Acústica Yamaha Kit 1 Studio",
+      "category": "Baterias e Percussão",
+      "price_brl": 4439.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Yamaha' mas Descrição corresponde a 'Pearl'",
+        "CONFLITO_ESPECIFICACAO_CASCO: Descrição afirma cascos em Poplar/Mogno mas Specs define Maple"
+      ]
+    },
+    {
+      "product_id": 140,
+      "name": "Bateria Acústica Pearl Kit 2 Studio",
+      "category": "Baterias e Percussão",
+      "price_brl": 13285.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Pearl' mas Descrição corresponde a 'Tama'",
+        "CONFLITO_ESPECIFICACAO_CASCO: Descrição afirma cascos 100% Birch mas Specs define Maple"
+      ]
+    },
+    {
+      "product_id": 142,
+      "name": "Teclado Sintetizador Korg Synth 1 Pro",
+      "category": "Teclados e Pianos",
+      "price_brl": 1127.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Korg' mas Descrição corresponde a 'Roland'",
+        "CONFLITO_ESPECIFICACAO_TECLAS: Descrição indica 88 teclas mas Specs define 61 teclas"
+      ]
+    },
+    {
+      "product_id": 144,
+      "name": "Teclado Sintetizador Roland Synth 3 Pro",
+      "category": "Teclados e Pianos",
+      "price_brl": 9351.0,
+      "reasons": [
+        "CONFLITO_MARCA_GRAVE: Nome cita 'Roland' mas Descrição corresponde a 'Yamaha'"
+      ]
+    }
+  ],
+  "empty_categories": [
+    {
+      "category_id": 6,
+      "name": "Instrumentos de Sopro (Madeiras)",
+      "approved_products_count": 0
+    },
+    {
+      "category_id": 7,
+      "name": "Instrumentos de Sopro (Metais)",
+      "approved_products_count": 0
+    },
+    {
+      "category_id": 8,
+      "name": "Cordas Orquestrais",
+      "approved_products_count": 0
+    }
+  ],
+  "warnings": [
+    "DUPLICATE_CUSTOMER_EMAIL: e-mail 'bruno.martins@jmail.com' compartilhado entre customer_id 11 e 43"
+  ]
+}
