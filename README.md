@@ -156,3 +156,41 @@ Utilize a tabela abaixo no simulador para validar todas as regras de negócio, c
 | **8. LGPD e Consulta de Pedido (Zero-Trust / Anti-IDOR)** | *"Qual o status do meu pedido? Meu e-mail é lucas.mendes@jmail.com e meu telefone é (67) 99812-3456"* | Aplica blindagem determinística LGPD (Zero-Trust): se conectado como titular no WhatsApp, trava estritamente ao `customer_id` da sessão (bloqueando com `unauthorized_mismatch` qualquer tentativa de consultar e-mails vazados de terceiros sem carregar dados do banco). Se em modo **Visitante Anônimo**, exige **dois fatores cadastrais simultâneos do mesmo titular** (ex: E-mail + Telefone ou E-mail + Nome Completo) antes de retornar o pedido **`order_id = 4`** (`BRQM7890123BR`). |
 | **9. Arrependimento e Trocas** | *"Comprei um ukulele pela internet e chegou ontem, mas me arrependi. Posso devolver?"* | Consulta o RAG Híbrido (`search_store_policies`, Seção 4.1): confirma o direito de arrependimento em até **7 dias corridos** após o recebimento sem necessidade de justificativa, com reembolso integral em até **10 dias úteis** e frete de devolução por conta da loja. <br><br> ![Arrependimento e Trocas](assets/Arrependimento%20e%20Trocas.png) |
 | **10. Reclamação / Transbordo** | *"O meu violão chegou com uma rachadura no tampo e o afinador quebrado. Quero fazer uma reclamação formal!"* | Acolhe o cliente com empatia (Seção 7.3) e aciona `register_human_handoff`: grava o chamado no banco (`handoff_tickets`), fornece o protocolo único no formato **`EM-YYYYMMDD-XXXXXX`** e informa o SLA oficial de retorno em **até 24 horas úteis**. |
+
+---
+
+## 7. Limitações Conhecidas
+
+- **Canal de Atendimento Simulado vs. Produção:**
+  - O projeto utiliza o **Chainlit** como interface de demonstração e homologação. Embora simule fielmente a experiência conversacional do WhatsApp com isolamento de contexto de sessão, ele opera em ambiente web interativo local, não estando conectado diretamente aos webhooks oficiais da **Meta Cloud API (WhatsApp Business)**.
+- **Autenticação em Sessão Web:**
+  - A alternância entre perfis de clientes é feita via menu suspenso nativo do simulador (para fins de testes ágeis pelo avaliador), ao invés de um fluxo estrito de autenticação criptográfica por chave de sessão ou token assinado (JWT).
+- **Indexação Vetorial de Políticas Estática:**
+  - O RAG Híbrido indexa o documento `políticas_da_loja.pdf` durante o bootstrap inicial. Em um ambiente corporativo com atualizações diárias de termos, seria necessário um pipeline automatizado de reindexação contínua (CDC / event-driven).
+
+---
+
+## 8. O que Eu Faria com Mais Tempo
+
+Caso houvesse tempo adicional de engenharia e escopo estendido para deploy corporativo, as seguintes implementações seriam priorizadas:
+
+1. **Conexão Oficial à Meta Cloud API (WhatsApp Business):**
+   - Criação de um gateway assíncrono em **FastAPI** com suporte a webhooks bidirecionais da Meta, validação de payload com HMAC-SHA256, envio de mensagens interativas (botões de resposta rápida, listas de produtos) e templates oficiais HSM (*Highly Structured Messages*).
+2. **Autenticação Segura 2FA via WhatsApp:**
+   - Implementação de um fluxo de verificação em duas etapas diretamente na conversa: envio de código OTP temporário de 6 dígitos via SMS/WhatsApp para confirmação de identidade antes de qualquer consulta ou alteração de dados sensíveis protegidos pela LGPD.
+3. **Fine-Tuning Especializado do Modelo:**
+   - Ajuste fino supervisionado (*Supervised Fine-Tuning - SFT*) ou DPO (*Direct Preference Optimization*) em modelos open-source ou Gemini sobre um corpus proprietário de termos técnicos, jargões de lutheria e gírias de músicos brasileiros (ex: regulagem de tensor, captação ativa vs passiva, tipos de madeira como jacarandá e marupá), reduzindo o tamanho do prompt e aumentando a naturalidade do diálogo.
+4. **Pipeline de Observabilidade Contínua (LLMOps):**
+   - Instrumentação completa com **LangSmith** ou **OpenTelemetry** para rastrear em tempo real a latência de ponta a ponta, consumo de tokens, taxa de reexecuções do laço de autocorreção do `hallucination_grader` e métricas de satisfação do usuário.
+
+---
+
+## 9. Uso de Assistentes de Código
+
+No desenvolvimento deste projeto, adotei um modelo colaborativo de ponta com auxílio de inteligência artificial de última geração:
+
+- **Ferramentas Utilizadas:**
+  - **Antigravity 2.0** integrado ao ecossistema VSCode, utilizando os modelos **Gemini 3.8 Flash** e **Gemini Argon**.
+- **Metodologia de Uso (Pair Programming Agêntico):**
+  - O assistente foi empregado como um parceiro de programação para aceleração de código repetitivo, scaffold de pipelines ETL, implementação ágil do RAG Híbrido (ChromaDB + BM25) e estruturação de nós no LangGraph.
+  - **Supervisão Humana Rigorosa:** Toda a concepção arquitetural, modelagem de dados, regras de negócio da loja, blindagem de cibersegurança contra IDOR e conformidade com a LGPD foram concebidas, direcionadas, revisadas e validadas linha por linha por mim, garantindo total controle de qualidade, segurança e conformidade técnica do código entregue.
