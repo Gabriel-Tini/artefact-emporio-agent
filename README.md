@@ -22,6 +22,28 @@ O sistema implementa um **RAG Agêntico Multi-Estágio de Precisão Absoluta (Ze
   <img src="assets/estrutura_diretorios.jpg" alt="Estrutura de Diretórios do Projeto" width="700">
 </p>
 
+### 1.1 Justificativa Técnica da Stack & Trade-offs
+
+A seleção da stack tecnológica foi orientada por critérios rigorosos de robustez, latência conversacional, reprodutibilidade imediata e controle determinístico de integridade:
+
+- **Python 3.12:**
+  - *Por que escolhemos:* Ecossistema padrão de fato para Inteligência Artificial, manipulação de dados e orquestração de LLMs. Oferece tipagem moderna (`typing`, `TypedDict`, `Annotated`), alta performance de execução e compatibilidade integral com os SDKs oficiais do Google (`google-genai`), LangGraph e bancos vetoriais.
+
+- **LangGraph:**
+  - *Por que escolhemos:* Permite modelar o fluxo como um Grafo Direcionado Cíclico com Estado Tipado (`AgentState`). Essa abordagem viabilizou a criação do nó avaliador (`hallucination_grader`) com laço determinístico de autocorreção (até 2 tentativas) e fallback seguro *in-place*, superando as limitações de cadeias lineares rígidas e evitando loops infinitos de geração.
+
+- **Gemini 3.5 Flash Lite (`gemini-3.5-flash-lite` via `google-genai`):**
+  - *Por que escolhemos:* Melhor equilíbrio do mercado entre latência ultrabaixa (indispensável para mensageria conversacional como WhatsApp), baixo custo operacional por milhão de tokens e altíssima fidelidade na chamada de ferramentas estruturadas (*Function Calling* com tipagem Pydantic/JSON Schema).
+
+- **SQLite com WAL Mode (*Write-Ahead Logging*):**
+  - *Por que escolhemos:* Autocontido e com **zero dependência de infraestrutura externa** ou serviços de nuvem para executar e validar o teste do avaliador. Com a ativação do modo WAL (`PRAGMA journal_mode=WAL;`), entrega alta concorrência de leitura sem lock, garantindo latência de microssegundos em consultas de catálogo e histórico.
+
+- **RAG Híbrido: ChromaDB + BM25 com RRF (*Reciprocal Rank Fusion*):**
+  - *Por que escolhemos:* O documento `políticas_da_loja.pdf` contém regras exatas (prazos estritos como *"7 dias"*, percentuais de parcelamento, siglas de frete) e conceitos semânticos amplos (*"direito de arrependimento"*, *"cobertura de avaria"*). O RAG puramente vetorial pode perder termos léxicos exatos; o BM25 puro ignoraria sinônimos e contexto semântico. A fusão via RRF une o melhor dos dois mundos com execução 100% local, tolerância semântica e sem custos de serviços de busca gerenciados.
+
+- **Chainlit:**
+  - *Por que escolhemos:* Projetado nativamente para interfaces de chat com suporte assíncrono (`async/await`), simulação fiel da experiência do WhatsApp, inspeção visual nativa de passos intermediários (*Steps / Tool Calls*) e controle de sessão/perfil em tempo real. Além disso, simplifica a entrega da interface para manter o foco 100% na excelência e governança do agente em funcionamento.
+
 ---
 
 ## 2. Governança e Auditoria de Dados
