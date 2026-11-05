@@ -1,196 +1,196 @@
-# 🎸 Agente de Atendimento Virtual — Empório da Música
+# 🎸 Virtual Customer Service Agent — Empório da Música
 
-> **Protótipo de Produção — Engenharia de IA & Governança de Dados**  
-> **Loja:** *Empório da Música Instrumentos Musicais Ltda.* (CNPJ `12.345.678/0001-90` — Campo Grande - MS)  
+> **Production Prototype — AI Engineering & Data Governance**  
+> **Store:** *Empório da Música Instrumentos Musicais Ltda.* (Tax ID / CNPJ `12.345.678/0001-90` — Campo Grande - MS, Brazil)  
 > **Stack:** **Python 3.12**, **LangGraph**, **LangChain**, **Gemini API (`gemini-3.5-flash-lite` / `google-genai`)**, **SQLite (WAL Mode)**, **ChromaDB**, **BM25 (`rank-bm25`)**, **Chainlit**.
 
 ---
 
-## 1. Visão Geral da Arquitetura
+## 1. Architecture Overview
 
-O sistema implementa um **RAG Agêntico Multi-Estágio de Precisão Absoluta (Zero Hallucination)** operando como assistente virtual via WhatsApp para atendimento a clientes (B2C) e suporte operacional à equipe da loja:
-
-<p align="center">
-  <img src="assets/arquitetura_sistema.jpg" alt="Visão Geral da Arquitetura do Sistema" width="650">
-</p>
-
-### Estrutura de Diretórios
+The system implements a **Multi-Stage Agentic RAG with Absolute Precision (Zero Hallucination)** operating as a WhatsApp virtual assistant for B2C customer service and internal operations support:
 
 <p align="center">
-  <img src="assets/estrutura_diretorios.jpg" alt="Estrutura de Diretórios do Projeto" width="700">
+  <img src="assets/arquitetura_sistema.jpg" alt="System Architecture Overview" width="650">
 </p>
 
-### 1.1 Justificativa Técnica da Stack & Trade-offs
+### Directory Structure
 
-A seleção da stack tecnológica foi orientada por critérios rigorosos de robustez, latência conversacional, reprodutibilidade imediata e controle determinístico de integridade:
+<p align="center">
+  <img src="assets/estrutura_diretorios.jpg" alt="Project Directory Structure" width="700">
+</p>
+
+### 1.1 Technical Stack Rationale & Trade-offs
+
+The choice of technological stack was guided by strict criteria of robustness, conversational latency, immediate reproducibility, and deterministic integrity control:
 
 - **Python 3.12:**
-  - *Por que escolhemos:* Ecossistema padrão de fato para Inteligência Artificial, manipulação de dados e orquestração de LLMs. Oferece tipagem moderna (`typing`, `TypedDict`, `Annotated`), alta performance de execução e compatibilidade integral com os SDKs oficiais do Google (`google-genai`), LangGraph e bancos vetoriais.
+  - *Why we chose it:* The de facto standard ecosystem for Artificial Intelligence, data manipulation, and LLM orchestration. Delivers modern typing (`typing`, `TypedDict`, `Annotated`), high runtime performance, and seamless compatibility with official Google SDKs (`google-genai`), LangGraph, and vector databases.
 
 - **LangGraph:**
-  - *Por que escolhemos:* Permite modelar o fluxo como um Grafo Direcionado Cíclico com Estado Tipado (`AgentState`). Essa abordagem viabilizou a criação do nó avaliador (`hallucination_grader`) com laço determinístico de autocorreção (até 2 tentativas) e fallback seguro *in-place*, superando as limitações de cadeias lineares rígidas e evitando loops infinitos de geração.
+  - *Why we chose it:* Enables modeling the conversational execution flow as a Cyclic Directed Graph with Typed State (`AgentState`). This paradigm made it possible to implement the evaluator node (`hallucination_grader`) with a deterministic self-correction loop (up to 2 retries) and safe in-place fallback, eliminating the fragility of linear chains and preventing infinite generation loops.
 
 - **Gemini 3.5 Flash Lite (`gemini-3.5-flash-lite` via `google-genai`):**
-  - *Por que escolhemos:* Melhor equilíbrio do mercado entre latência ultrabaixa (indispensável para mensageria conversacional como WhatsApp), baixo custo operacional por milhão de tokens e altíssima fidelidade na chamada de ferramentas estruturadas (*Function Calling* com tipagem Pydantic/JSON Schema).
+  - *Why we chose it:* Best market balance between ultra-low latency (indispensable for real-time messaging such as WhatsApp), cost-efficiency per million tokens, and exceptional fidelity in structured tool calls (*Function Calling* with Pydantic/JSON Schema validation).
 
-- **SQLite com WAL Mode (*Write-Ahead Logging*):**
-  - *Por que escolhemos:* Autocontido e com **zero dependência de infraestrutura externa** ou serviços de nuvem para executar e validar o teste do avaliador. Com a ativação do modo WAL (`PRAGMA journal_mode=WAL;`), entrega alta concorrência de leitura sem lock, garantindo latência de microssegundos em consultas de catálogo e histórico.
+- **SQLite with WAL Mode (*Write-Ahead Logging*):**
+  - *Why we chose it:* Self-contained with **zero external infrastructure or managed cloud dependencies** to execute and test the evaluator. With WAL mode enabled (`PRAGMA journal_mode=WAL;`), it delivers high read concurrency without table locks, ensuring microsecond latencies for catalog and order history queries.
 
-- **RAG Híbrido: ChromaDB + BM25 com RRF (*Reciprocal Rank Fusion*):**
-  - *Por que escolhemos:* O documento `políticas_da_loja.pdf` contém regras exatas (prazos estritos como *"7 dias"*, percentuais de parcelamento, siglas de frete) e conceitos semânticos amplos (*"direito de arrependimento"*, *"cobertura de avaria"*). O RAG puramente vetorial pode perder termos léxicos exatos; o BM25 puro ignoraria sinônimos e contexto semântico. A fusão via RRF une o melhor dos dois mundos com execução 100% local, tolerância semântica e sem custos de serviços de busca gerenciados.
+- **Hybrid RAG: ChromaDB + BM25 with RRF (*Reciprocal Rank Fusion*):**
+  - *Why we chose it:* The `políticas_da_loja.pdf` document contains exact normative rules (strict deadlines such as *"7 days"*, installment percentages, carrier acronyms) alongside broad semantic concepts (*"right of withdrawal"*, *"damage coverage"*). Pure vector RAG can fail on exact lexical keywords, while pure BM25 misses synonyms and semantic intent. Fusion via RRF unites the strengths of both with 100% local execution and zero managed search costs.
 
 - **Chainlit:**
-  - *Por que escolhemos:* Projetado nativamente para interfaces de chat com suporte assíncrono (`async/await`), simulação fiel da experiência do WhatsApp, inspeção visual nativa de passos intermediários (*Steps / Tool Calls*) e controle de sessão/perfil em tempo real. Além disso, simplifica a entrega da interface para manter o foco 100% na excelência e governança do agente em funcionamento.
+  - *Why we chose it:* Purpose-built for conversational interfaces with native asynchronous execution (`async/await`), faithful simulation of the WhatsApp mobile/web experience, transparent visual inspection of intermediate steps (*Steps / Tool Calls*), and real-time session/profile controls. Furthermore, it streamlines UI delivery, allowing engineering efforts to focus 100% on agent quality, security, and governance.
 
 ---
 
-## 2. Governança e Auditoria de Dados
+## 2. Data Governance & Audit Pipeline
 
-Durante a ingestão dos dados brutos (`data/raw/`), o motor heurístico `ProductAuditor` (`src/data/auditor.py`) inspeciona todas as tabelas e o manual em PDF, neutralizando armadilhas cadastrais antes que cheguem ao LLM:
+During raw data ingestion (`data/raw/`), the heuristic engine `ProductAuditor` (`src/data/auditor.py`) audits all tables and the policy PDF, neutralizing catalog anomalies before they reach the LLM:
 
-1. **Inconsistências Graves no Catálogo (`products.csv` — IDs 135 a 144):**
-   - **Baixos (`IDs 135, 136, 137`):** Nomes comerciais citam `Music Man Bass 1X`, `Ibanez Bass 2X` (com preço irreal de `R$ 441,00`) e `Yamaha Bass 3X`, enquanto as descrições descrevem modelos exclusivos de outras marcas (`Fender Jazz Bass`, `Fender Precision split-coil`, `Ibanez 5 cordas`) e o JSON `specs` contradiz a contagem de cordas (`strings: "4"`).
-   - **Baterias (`IDs 139, 140`):** Nomes anunciam `Yamaha Kit 1` e `Pearl Kit 2`, mas as descrições citam `Pearl Export` (cascos em Poplar/Mogno) e `Tama 100% Birch`, contradizendo os `specs` (`shells: "Maple"`).
-   - **Teclados (`IDs 142, 144`):** Nomes indicam `Korg Synth 1 Pro` e `Roland Synth 3 Pro`, enquanto as descrições descrevem sintetizadores `Roland SuperNATURAL de 88 teclas` (contra `keys: "61"` no `specs`) e teclados `Yamaha`.
-2. **Política de Quarentena Segura:**
-   - De **65 produtos analisados**, **58 foram aprovados** (`trust_status = 'approved'`) e os **7 produtos corrompidos (`IDs 135, 136, 137, 139, 140, 142 e 144`) foram isolados na tabela `quarantined_products`**.
-   - As ferramentas de catálogo consultam exclusivamente produtos aprovados. Caso o cliente pergunte especificamente por um modelo em quarentena, o agente informa com transparência que o item encontra-se temporariamente indisponível para auditoria técnica de lote/especificações e sugere modelos aprovados da mesma categoria.
-3. **Integridade de Clientes, Pedidos e Categorias (`data/processed/data_quality_report.json`):**
-   - **Anomalia em Clientes:** Detectado e reportado o compartilhamento do e-mail `bruno.martins@jmail.com` entre os clientes `#11` (*Bruno Carvalho Martins*) e `#43` (*Bruno Martins*), mantendo a integridade referencial dos 20 pedidos e 22 itens (incluindo o pedido histórico `order_id = 10` que referencia o item quarentenado `product_id = 135`).
-   - **Categorias Vazias:** Mapeadas as categorias `6` (*Instrumentos de Sopro - Madeiras*), `7` (*Instrumentos de Sopro - Metais*) e `8` (*Cordas Orquestrais*) com `0` produtos cadastrados.
-   - **Promoções:** Distinção estrita entre as **4 promoções ativas (`is_active = 1`)** e as **21 promoções expiradas (`is_active = 0`)**.
-
----
-
-## 3. RAG Híbrido sobre `políticas_da_loja.pdf`
-
-O manual oficial de políticas e procedimentos (8 páginas, 10 seções) é processado de ponta a ponta em `src/rag/`:
-
-- **Decomposição Hierárquica (`src/rag/pdf_parser.py`):** Extração estruturada das 10 seções em **15 chunks semânticos (`PolicyChunk`)**, preservando 100% das cláusulas normativas: expediente (Seg–Sex 09h–18h, Sáb 09h–13h), regras de pagamento e parcelamento, direito de arrependimento (7 dias corridos), trocas por defeito (30 dias na loja e 90 dias de garantia legal CDC), trocas por preferência (7 dias com compensação de valor), itens não elegíveis (boquilhas por higiene, instrumentos personalizados e venda final), exclusão de acessórios e diretrizes LGPD.
-- **Busca Léxica Normalizada (`BM25Okapi` + `tokenize_pt`):** Normalização de diacríticos (`NFKD`), remoção de pontuações aderidas e filtragem de stopwords em português, calibrada para termos exatos (`PIX`, `5%`, `Jadlog`, `SEDEX`, `PAC`, `Campo Grande`, `7 dias`, `30 dias`, `90 dias`, `boquilha`, `LGPD`).
-- **Busca Vetorial (`ChromaDB`):** Persistida em `data/processed/chroma_db` com verificação automática de consistência dimensional (`embedding_backend`) e inicialização singleton protegida por `threading.Lock()`.
-- **Reciprocal Rank Fusion (RRF):** Combina os rankings descartando documentos com pontuação BM25 nula (`<= 0.0`) e atribuindo peso balanceado (`1.5` para match léxico exato no BM25 e `1.0` para similaridade semântica vetorial).
+1. **Severe Inconsistencies in Catalog (`products.csv` — IDs 135 to 144):**
+   - **Basses (`IDs 135, 136, 137`):** Commercial titles state `Music Man Bass 1X`, `Ibanez Bass 2X` (with an unrealistic price of `R$ 441.00`), and `Yamaha Bass 3X`, while descriptions cite competing brand models (`Fender Jazz Bass`, `Fender Precision split-coil`, `Ibanez 5-string`) and the JSON `specs` contradicts string counts (`strings: "4"`).
+   - **Drum Sets (`IDs 139, 140`):** Titles announce `Yamaha Kit 1` and `Pearl Kit 2`, but descriptions specify `Pearl Export` (Poplar/Mahogany shells) and `Tama 100% Birch`, contradicting the `specs` attribute (`shells: "Maple"`).
+   - **Keyboards (`IDs 142, 144`):** Titles list `Korg Synth 1 Pro` and `Roland Synth 3 Pro`, while descriptions detail `Roland SuperNATURAL 88-key` synths (against `keys: "61"` in `specs`) and `Yamaha` workstations.
+2. **Safe Quarantine Policy:**
+   - Out of **65 analyzed products**, **58 were approved** (`trust_status = 'approved'`) and the **7 corrupted items (`IDs 135, 136, 137, 139, 140, 142, and 144`) were isolated in the `quarantined_products` table**.
+   - Catalog search tools query exclusively approved products. If a customer explicitly inquires about a quarantined model, the agent transparently clarifies that the item is temporarily unavailable due to technical batch/specification audits and proactively suggests approved alternatives from the same category.
+3. **Customer, Order, and Category Integrity (`data/processed/data_quality_report.json`):**
+   - **Customer Anomaly:** Detected and reported shared email `bruno.martins@jmail.com` across customers `#11` (*Bruno Carvalho Martins*) and `#43` (*Bruno Martins*), while preserving referential integrity across 20 orders and 22 items (including historic order `order_id = 10` referencing quarantined item `product_id = 135`).
+   - **Empty Categories:** Flagged categories `6` (*Woodwinds*), `7` (*Brass*), and `8` (*Orchestral Strings*) having `0` products registered.
+   - **Promotions:** Strict separation between **4 active promotions (`is_active = 1`)** and **21 expired promotions (`is_active = 0`)**.
 
 ---
 
-## 4. Segurança da Informação e Conformidade LGPD (Zero-Trust)
+## 3. Hybrid RAG over `políticas_da_loja.pdf`
 
-Para prevenir vazamento de dados pessoais (Art. 5º, I e Art. 46 da Lei nº 13.709/2018), ataques de **IDOR (*Insecure Direct Object Reference*) / BOLA (*Broken Object Level Authorization*)** e fraudes de **Intercepção Logística de Cargas**, o sistema adota proteções determinísticas nativas:
+The official 8-page, 10-section store policy manual is parsed and indexed end-to-end in `src/rag/`:
 
-1. **Trava de Titularidade de Sessão (*Strict Session Ownership Binding*):**
-   - Em sessões autenticadas pelo número do WhatsApp (`customer_context`), a ferramenta `lookup_customer_orders` vincula a consulta estritamente ao `customer_id` do titular.
-   - Qualquer tentativa de consultar e-mails, telefones ou nomes de terceiros é bloqueada com `status = "unauthorized_mismatch"` **antes de realizar queries na tabela de pedidos (`orders`)**, impedindo vazamento de dados de outros clientes para o contexto do LLM.
-2. **Autenticação Baseada em Conhecimento de Dois Fatores (2FA) para Visitantes Anônimos:**
-   - Em sessões não identificadas (*Visitante Anônimo*), a apresentação de um e-mail ou telefone isolado é recusada com `status = "verification_required"`.
-   - Exige-se obrigatoriamente a combinação simultânea de **dois dados cadastrais do mesmo titular** (`E-mail + Telefone completo com DDD` ou `E-mail/Telefone + Nome Completo exato`).
-   - Bloqueio estrito de derivação de nome parcial a partir da parte local do e-mail e rejeição de telefones parciais sem DDD (`< 10 dígitos`).
-3. **Anti-Spoofing em Transbordo Humano e Exclusão de Dados:**
-   - Em `register_human_handoff`, solicitações de exclusão ou alteração de dados pessoais por usuários anônimos exigem comprovação prévia de 2 fatores, impedindo exclusões maliciosas de contas por terceiros.
-4. **Minimização de Dados e Guardrails Anti-Alucinação no Grafo:**
-   - O `context_router` mascara o e-mail do titular conectado (`l***s@jmail.com`) ao injetar o contexto da sessão no prompt do modelo.
-   - O nó `hallucination_grader` audita respostas e bloqueia menção a códigos de rastreamento (`BR...BR`) não autorizados ou exposição indevida do e-mail completo em texto aberto.
-   - A interface Chainlit limpa automaticamente o histórico de mensagens ao alternar perfis na barra lateral, eliminando contaminação cruzada de dados entre clientes.
+- **Hierarchical Decomposition (`src/rag/pdf_parser.py`):** Structured extraction of all 10 sections into **15 semantic chunks (`PolicyChunk`)**, preserving 100% of normative rules: operating hours (Mon–Fri 09:00–18:00, Sat 09:00–13:00), payment and installment criteria, right of withdrawal (7 calendar days), defective item exchanges (30 days in-store and 90 days legal warranty under CDC), preference-based exchanges (7 days with price adjustments), non-eligible items (hygiene-restricted mouthpieces, custom instruments, final clearance items), accessory exclusions, and LGPD data privacy mandates.
+- **Normalized Lexical Search (`BM25Okapi` + `tokenize_pt`):** Unicode diacritic normalization (`NFKD`), punctuation stripping, and Portuguese stopword filtering, fine-tuned for exact lexical tokens (`PIX`, `5%`, `Jadlog`, `SEDEX`, `PAC`, `Campo Grande`, `7 dias`, `30 dias`, `90 dias`, `boquilha`, `LGPD`).
+- **Vector Search (`ChromaDB`):** Persisted in `data/processed/chroma_db` with automatic embedding dimensionality verification (`embedding_backend`) and singleton initialization protected by `threading.Lock()`.
+- **Reciprocal Rank Fusion (RRF):** Merges candidate rankings by pruning zero-score BM25 documents (`<= 0.0`) with balanced weights (`1.5` for exact BM25 keyword matches, `1.0` for semantic vector similarity).
 
-### 4.1 Evidências Práticas de Conformidade (Screenshots)
+---
 
-Os testes reais realizados no simulador comprovam a eficácia das travas de cibersegurança e conformidade estrita com a LGPD:
+## 4. Information Security & LGPD Compliance (Zero-Trust)
 
-| 1. Bloqueio IDOR (E-mail de Terceiro) | 2. Recusa de Revelação de Dados de Terceiros | 3. Minimização & Mascaramento de E-mail |
+To prevent personal data leaks (Brazilian Data Protection Law - LGPD nº 13.709/2018, Art. 5, I and Art. 46), **IDOR (*Insecure Direct Object Reference*) / BOLA (*Broken Object Level Authorization*)** vulnerabilities, and **Logistics Interception Frauds**, the system implements native deterministic safeguards:
+
+1. **Strict Session Ownership Binding:**
+   - In sessions authenticated by WhatsApp phone number (`customer_context`), the `lookup_customer_orders` tool locks order lookups strictly to the session holder's `customer_id`.
+   - Any attempt to query third-party emails, phones, or names is rejected with `status = "unauthorized_mismatch"` **before issuing queries to the `orders` database table**, preventing external customer data from ever leaking into the LLM context.
+2. **Two-Factor Knowledge Authentication (2FA) for Anonymous Visitors:**
+   - In unauthenticated sessions (*Anonymous Visitor*), submitting an isolated email or phone number is rejected with `status = "verification_required"`.
+   - The user must provide a simultaneous combination of **two profile data points belonging to the exact same account holder** (`Email + Full Phone with Area Code` or `Email/Phone + Exact Full Name`).
+   - Strict validation blocks deriving names from email handles and rejects partial phone numbers without area codes (`< 10 digits`).
+3. **Anti-Spoofing on Human Handoff and Data Erasure:**
+   - In `register_human_handoff`, requests for personal data deletion or modification submitted by anonymous users mandate prior 2-factor verification, neutralizing malicious account tampering.
+4. **Data Minimization & Graph Anti-Hallucination Guardrails:**
+   - The `context_router` masks the customer's email (`l***s@jmail.com`) when injecting session context into the system prompt.
+   - The `hallucination_grader` node audits generated answers, blocking unauthorized tracking codes (`BR...BR`) or clear-text exposure of complete customer emails.
+   - The Chainlit interface automatically purges message history when switching customer profiles in the sidebar, preventing cross-session data contamination.
+
+### 4.1 Practical Compliance Evidence (Screenshots)
+
+Real simulation tests confirm the efficacy of cybersecurity guardrails and strict LGPD compliance:
+
+| 1. IDOR Blocking (Third-Party Email) | 2. Refusal to Disclose Third-Party Data | 3. Email Minimization & Masking |
 | :---: | :---: | :---: |
-| ![Bloqueio IDOR](assets/01_lgpd_bloqueio_idor_email_terceiro.png) | ![Recusa de Dados de Terceiro](assets/02_lgpd_recusa_revelacao_dados_terceiro.png) | ![Mascaramento de E-mail](assets/03_lgpd_mascaramento_email_titular.png) |
-| *Bloqueio imediato ao tentar consultar pedidos com e-mail não pertencente à sessão.* | *Recusa estrita de revelar titularidade ou pedidos de contas de terceiros.* | *Proteção de privacidade exibindo e-mail mascarado (`r***a@jmail.com`).* |
+| ![IDOR Blocking](assets/01_lgpd_bloqueio_idor_email_terceiro.png) | ![Refusal to Disclose Data](assets/02_lgpd_recusa_revelacao_dados_terceiro.png) | ![Email Masking](assets/03_lgpd_mascaramento_email_titular.png) |
+| *Immediate block when attempting to query orders using an email not belonging to the session.* | *Strict refusal to disclose identity or order records from third-party customer accounts.* | *Privacy preservation displaying masked email (`r***a@jmail.com`).* |
 
 ---
 
-## 5. Como Executar o Projeto
+## 5. How to Run the Project
 
-### 5.1 Pré-requisitos
-- **Python 3.12** instalado (no Windows, disponível via `py -3.12`).
-- Chave de API do Google Gemini (`GOOGLE_API_KEY` ou `GEMINI_API_KEY`).
+### 5.1 Prerequisites
+- **Python 3.12** installed (on Windows, available via `py -3.12`).
+- Google Gemini API key (`GOOGLE_API_KEY` or `GEMINI_API_KEY`).
 
-### 5.2 Configuração do Ambiente Virtual e Segredos
+### 5.2 Virtual Environment & Secrets Configuration
 ```powershell
-# 1. Criar e ativar o ambiente virtual Python 3.12 (caso ainda não esteja ativo)
+# 1. Create and activate Python 3.12 virtual environment (if not already created)
 py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1   # No Windows PowerShell
-# ou: source .venv/bin/activate  # No Linux/macOS
+.\.venv\Scripts\Activate.ps1   # On Windows PowerShell
+# or: source .venv/bin/activate  # On Linux/macOS
 
-# 2. Instalar as dependências
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Configurar as variáveis de ambiente
+# 3. Configure environment variables
 Copy-Item .env.example .env
-# Edite o arquivo .env com sua chave de API e o modelo gemini-3.5-flash-lite:
-# GOOGLE_API_KEY=sua_chave_aqui
-# GEMINI_API_KEY=sua_chave_aqui
+# Edit .env with your API key and gemini-3.5-flash-lite model:
+# GOOGLE_API_KEY=your_key_here
+# GEMINI_API_KEY=your_key_here
 # GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-### 5.3 Execução do Pipeline de Ingestão e Auditoria
+### 5.3 Run Ingestion & Audit Pipeline
 ```powershell
 python -m src.data.ingest
 ```
-*(Cria o banco relacional `data/processed/emporio.db` em modo WAL e exporta o laudo `data/processed/data_quality_report.json`)*.
+*(Creates the relational SQLite database `data/processed/emporio.db` in WAL mode and exports audit report `data/processed/data_quality_report.json`)*.
 
-### 5.4 Inicialização do Simulador WhatsApp (Chainlit)
+### 5.4 Launch WhatsApp Simulator (Chainlit)
 ```powershell
 chainlit run app.py -w
 ```
-Acesse no navegador: **`http://localhost:8000`**
+Open in your browser: **`http://localhost:8000`**
 
 ---
 
-## 6. Roteiro de Testes Manuais no Chainlit (10 Casos Críticos)
+## 6. Manual Test Suite in Chainlit (10 Critical Scenarios)
 
-Utilize a tabela abaixo no simulador para validar todas as regras de negócio, cálculos determinísticos e guardrails do agente:
+Use the table below in the simulator to validate all business rules, deterministic calculations, and safety guardrails:
 
-| Caso | Mensagem do Cliente no Chat | Comportamento Esperado do Agente |
+| Scenario | Customer Message in Chat | Expected Agent Behavior |
 | :--- | :--- | :--- |
-| **1. Catálogo e PIX** | *"Olá! Quero começar a tocar violão. Vocês têm algum modelo com cordas de nylon? Qual o preço e se tem desconto no PIX?"* | Consulta `search_catalog` e `calculate_payment_conditions`. Apresenta opções aprovadas como o **Tagima Memphis AC-39** (`R$ 429,90` $\rightarrow$ **`R$ 408,41` no PIX**) ou **Yamaha C40** (`R$ 599,90` $\rightarrow$ **`R$ 569,91` no PIX**), aplicando **exatamente 5% de desconto** sobre o preço de tabela. <br><br> ![Busca no Catálogo](assets/04_busca_catalogo_instrumentos_cordas.png) |
-| **2. PIX Não-Cumulativo** | *"Gostei do violão Crafter HT-100 Folk. Se eu pagar no PIX, consigo mais 5% além da promoção?"* | Identifica a promoção ativa *'Desconto Exclusivo'* (`18% off`, de `R$ 2.399,00` por **`R$ 1.967,18`**) e **aplica estritamente a Seção 6.2**: informa que o desconto de 5% do PIX **NÃO é cumulativo** com preços já promocionais. |
-| **3. Escopo (Acessórios)** | *"Vocês vendem jogo de cordas de nylon ou palhetas avulsas?"* | Aciona o bloqueio determinístico de escopo (Seções 1 e 7.1): informa com simpatia que a Empório da Música trabalha **exclusivamente com instrumentos musicais completos** e sugere procurar lojas parceiras para acessórios avulsos. |
-| **4. Fora de Estoque** | *"Tem o violão Giannini GF-3D Dreadnought?"* | Consulta o catálogo, identifica que o produto encontra-se com `stock_quantity = 0` (Seção 7.3) e **sugere proativamente alternativas disponíveis em estoque** da mesma categoria (ex: *Tagima Memphis AC-39*, *Rozini RC-104*, *Shelby SN-100*). |
-| **5. Quarentena de Dados** | *"Estou procurando o contrabaixo Music Man Bass 1X. Tem para pronta entrega?"* | Detecta o modelo em quarentena técnica (`ID 135`): informa com transparência que o item está temporariamente indisponível para auditoria técnica de lote/especificações, bloqueando a venda enganosa e sugerindo alternativas aprovadas (como o *Music Man Bass 4X*). <br><br> ![Modelo em Quarentena](assets/05_quarentena_modelo_indisponivel.png) |
-| **6. Frete Campo Grande** | *"Quanto custa o frete para entregar aqui no Centro de Campo Grande?"* | Consulta `calculate_shipping`: explica que na Região Metropolitana de Campo Grande - MS pedidos **acima de `R$ 500,00` têm Frete Grátis** e pedidos abaixo de `R$ 500,00` têm **taxa fixa de `R$ 35,00`**, com entrega por **motoboy próprio em 1 a 3 dias úteis**. |
-| **7. Frete Outras Cidades** | *"Vocês entregam em Dourados - MS? Quais as opções e prazos?"* | Lista as 3 modalidades oficiais (Seção 5.2): **SEDEX (Correios)** (`2 a 5 dias úteis`), **Jadlog (.package)** (`3 a 8 dias úteis`) e **PAC (Correios)** (`5 a 12 dias úteis`), todas com rastreamento e seguro contra extravio/avaria inclusos. |
-| **8. LGPD e Consulta de Pedido (Zero-Trust / Anti-IDOR)** | *"Qual o status do meu pedido? Meu e-mail é lucas.mendes@jmail.com e meu telefone é (67) 99812-3456"* | Aplica blindagem determinística LGPD (Zero-Trust): se conectado como titular no WhatsApp, trava estritamente ao `customer_id` da sessão (bloqueando com `unauthorized_mismatch` qualquer tentativa de consultar e-mails vazados de terceiros sem carregar dados do banco). Se em modo **Visitante Anônimo**, exige **dois fatores cadastrais simultâneos do mesmo titular** (ex: E-mail + Telefone ou E-mail + Nome Completo) antes de retornar o pedido **`order_id = 4`** (`BRQM7890123BR`). |
-| **9. Arrependimento e Trocas** | *"Comprei um ukulele pela internet e chegou ontem, mas me arrependi. Posso devolver?"* | Consulta o RAG Híbrido (`search_store_policies`, Seção 4.1): confirma o direito de arrependimento em até **7 dias corridos** após o recebimento sem necessidade de justificativa, com reembolso integral em até **10 dias úteis** e frete de devolução por conta da loja. <br><br> ![Arrependimento e Trocas](assets/Arrependimento%20e%20Trocas.png) |
-| **10. Reclamação / Transbordo** | *"O meu violão chegou com uma rachadura no tampo e o afinador quebrado. Quero fazer uma reclamação formal!"* | Acolhe o cliente com empatia (Seção 7.3) e aciona `register_human_handoff`: grava o chamado no banco (`handoff_tickets`), fornece o protocolo único no formato **`EM-YYYYMMDD-XXXXXX`** e informa o SLA oficial de retorno em **até 24 horas úteis**. |
+| **1. Catalog & PIX** | *"Olá! Quero começar a tocar violão. Vocês têm algum modelo com cordas de nylon? Qual o preço e se tem desconto no PIX?"* | Invokes `search_catalog` and `calculate_payment_conditions`. Recommends approved models such as **Tagima Memphis AC-39** (`R$ 429.90` $\rightarrow$ **`R$ 408.41` on PIX**) or **Yamaha C40** (`R$ 599.90` $\rightarrow$ **`R$ 569.91` on PIX**), computing **exactly 5% discount** on regular retail price. <br><br> ![Catalog Search](assets/04_busca_catalogo_instrumentos_cordas.png) |
+| **2. Non-Cumulative PIX** | *"Gostei do violão Crafter HT-100 Folk. Se eu pagar no PIX, consigo mais 5% além da promoção?"* | Detects active promotion *'Exclusive Discount'* (`18% off`, from `R$ 2,399.00` down to **`R$ 1,967.18`**) and **strictly applies Section 6.2**: explains that the 5% PIX discount is **NOT cumulative** with already discounted items. |
+| **3. Scope Enforcing (Accessories)** | *"Vocês vendem jogo de cordas de nylon ou palhetas avulsas?"* | Triggers deterministic scope guardrail (Sections 1 and 7.1): politely clarifies that Empório da Música sells **exclusively complete musical instruments** and advises checking partner shops for standalone accessories. |
+| **4. Out of Stock** | *"Tem o violão Giannini GF-3D Dreadnought?"* | Queries the catalog, detects `stock_quantity = 0` (Section 7.3), and **proactively recommends available in-stock alternatives** within the same category (e.g., *Tagima Memphis AC-39*, *Rozini RC-104*, *Shelby SN-100*). |
+| **5. Data Quarantine** | *"Estou procurando o contrabaixo Music Man Bass 1X. Tem para pronta entrega?"* | Detects quarantined item (`ID 135`): transparently informs the customer that the model is unavailable due to technical batch/spec auditing, preventing misleading sales and suggesting approved options (such as *Music Man Bass 4X*). <br><br> ![Quarantined Model](assets/05_quarentena_modelo_indisponivel.png) |
+| **6. Shipping (Campo Grande)** | *"Quanto custa o frete para entregar aqui no Centro de Campo Grande?"* | Invokes `calculate_shipping`: explains that across the Campo Grande - MS metro area, orders **above `R$ 500.00` qualify for Free Shipping**, while orders below `R$ 500.00` carry a **fixed `R$ 35.00` fee**, delivered via **in-house courier within 1 to 3 business days**. |
+| **7. Shipping (Other Cities)** | *"Vocês entregam em Dourados - MS? Quais as opções e prazos?"* | Lists all 3 official national carriers (Section 5.2): **SEDEX (Correios)** (`2 to 5 business days`), **Jadlog (.package)** (`3 to 8 business days`), and **PAC (Correios)** (`5 to 12 business days`), all including tracking and full insurance against transit loss/damage. |
+| **8. LGPD & Order Lookup (Zero-Trust / Anti-IDOR)** | *"Qual o status do meu pedido? Meu e-mail é lucas.mendes@jmail.com e meu telefone é (67) 99812-3456"* | Applies deterministic LGPD security (Zero-Trust): if authenticated as account holder on WhatsApp, strictly binds lookup to session `customer_id` (blocking third-party leaked emails with `unauthorized_mismatch` without touching order records). If in **Anonymous Visitor** mode, requires **two simultaneous matching profile factors** (e.g., Email + Phone or Email + Full Name) before returning order **`order_id = 4`** (`BRQM7890123BR`). |
+| **9. Return & Exchange Policies** | *"Comprei um ukulele pela internet e chegou ontem, mas me arrependi. Posso devolver?"* | Queries Hybrid RAG (`search_store_policies`, Section 4.1): confirms the right of withdrawal within **7 calendar days** of delivery without justification, with 100% refund in up to **10 business days** and store-covered return freight. <br><br> ![Returns and Exchanges](assets/Arrependimento%20e%20Trocas.png) |
+| **10. Escalation / Human Handoff** | *"O meu violão chegou com uma rachadura no tampo e o afinador quebrado. Quero fazer uma reclamação formal!"* | Empathizes with the customer (Section 7.3) and invokes `register_human_handoff`: persists ticket to SQLite (`handoff_tickets`), generates unique protocol formatted as **`EM-YYYYMMDD-XXXXXX`**, and confirms official SLA callback within **24 business hours**. |
 
 ---
 
-## 7. Limitações Conhecidas
+## 7. Known Limitations
 
-- **Canal de Atendimento Simulado vs. Produção:**
-  - O projeto utiliza o **Chainlit** como interface de demonstração e homologação. Embora simule fielmente a experiência conversacional do WhatsApp com isolamento de contexto de sessão, ele opera em ambiente web interativo local, não estando conectado diretamente aos webhooks oficiais da **Meta Cloud API (WhatsApp Business)**.
-- **Autenticação em Sessão Web:**
-  - A alternância entre perfis de clientes é feita via menu suspenso nativo do simulador (para fins de testes ágeis pelo avaliador), ao invés de um fluxo estrito de autenticação criptográfica por chave de sessão ou token assinado (JWT).
-- **Indexação Vetorial de Políticas Estática:**
-  - O RAG Híbrido indexa o documento `políticas_da_loja.pdf` durante o bootstrap inicial. Em um ambiente corporativo com atualizações diárias de termos, seria necessário um pipeline automatizado de reindexação contínua (CDC / event-driven).
-
----
-
-## 8. O que Eu Faria com Mais Tempo
-
-Caso houvesse tempo adicional de engenharia e escopo estendido para deploy corporativo, as seguintes implementações seriam priorizadas:
-
-1. **Conexão Oficial à Meta Cloud API (WhatsApp Business):**
-   - Criação de um gateway assíncrono em **FastAPI** com suporte a webhooks bidirecionais da Meta, validação de payload com HMAC-SHA256, envio de mensagens interativas (botões de resposta rápida, listas de produtos) e templates oficiais HSM (*Highly Structured Messages*).
-2. **Autenticação Segura 2FA via WhatsApp:**
-   - Implementação de um fluxo de verificação em duas etapas diretamente na conversa: envio de código OTP temporário de 6 dígitos via SMS/WhatsApp para confirmação de identidade antes de qualquer consulta ou alteração de dados sensíveis protegidos pela LGPD.
-3. **Fine-Tuning Especializado do Modelo:**
-   - Ajuste fino supervisionado (*Supervised Fine-Tuning - SFT*) ou DPO (*Direct Preference Optimization*) em modelos open-source ou Gemini sobre um corpus proprietário de termos técnicos, jargões de lutheria e gírias de músicos brasileiros (ex: regulagem de tensor, captação ativa vs passiva, tipos de madeira como jacarandá e marupá), reduzindo o tamanho do prompt e aumentando a naturalidade do diálogo.
-4. **Pipeline de Observabilidade Contínua (LLMOps):**
-   - Instrumentação completa com **LangSmith** ou **OpenTelemetry** para rastrear em tempo real a latência de ponta a ponta, consumo de tokens, taxa de reexecuções do laço de autocorreção do `hallucination_grader` e métricas de satisfação do usuário.
+- **Simulated Customer Service Channel vs. Production:**
+  - The project utilizes **Chainlit** as a demonstration and validation interface. While it accurately simulates the conversational WhatsApp user experience with session context isolation, it operates in a local interactive web environment rather than being hooked directly into live webhooks of the **Meta Cloud API (WhatsApp Business)**.
+- **Web Session Authentication:**
+  - Customer profile switching is handled via the simulator's native dropdown menu (facilitating fast evaluation tests), rather than through a strict cryptographic authentication flow utilizing signed session keys or tokens (JWT).
+- **Static Policy Vector Indexing:**
+  - Hybrid RAG parses and indexes `políticas_da_loja.pdf` during initial bootstrap. In an enterprise setting with daily policy updates, an automated continuous reindexing pipeline (CDC / event-driven) would be recommended.
 
 ---
 
-## 9. Uso de Assistentes de Código
+## 8. What I Would Do with More Time
 
-No desenvolvimento deste projeto, adotei um modelo colaborativo de ponta com auxílio de inteligência artificial de última geração:
+Given additional engineering runway and extended scope for enterprise cloud deployment, the following enhancements would be prioritized:
 
-- **Ferramentas Utilizadas:**
-  - **Antigravity 2.0** integrado ao ecossistema VSCode, utilizando os modelos **Gemini 3.8 Flash** e **Gemini Argon**.
-- **Metodologia de Uso (Pair Programming Agêntico):**
-  - O assistente foi empregado como um parceiro de programação para aceleração de código repetitivo, scaffold de pipelines ETL, implementação ágil do RAG Híbrido (ChromaDB + BM25) e estruturação de nós no LangGraph.
-  - **Supervisão Humana Rigorosa:** Toda a concepção arquitetural, modelagem de dados, regras de negócio da loja, blindagem de cibersegurança contra IDOR e conformidade com a LGPD foram concebidas, direcionadas, revisadas e validadas linha por linha por mim, garantindo total controle de qualidade, segurança e conformidade técnica do código entregue.
+1. **Official Integration with Meta Cloud API (WhatsApp Business):**
+   - Build an asynchronous gateway in **FastAPI** supporting bidirectional Meta webhooks, HMAC-SHA256 payload verification, interactive messaging (quick reply buttons, product lists), and official HSM (*Highly Structured Messages*) templates.
+2. **Secure 2FA Authentication via WhatsApp:**
+   - Implement an in-conversation two-step verification flow: dispatching a temporary 6-digit OTP code via SMS/WhatsApp to confirm identity prior to disclosing or altering sensitive personal records protected by LGPD.
+3. **Domain-Specific Model Fine-Tuning:**
+   - Execute Supervised Fine-Tuning (SFT) or DPO (*Direct Preference Optimization*) on open-source or Gemini models using a curated corpus of Brazilian lutherie jargon, instrument maintenance terms, and musician colloquialisms (e.g., truss rod adjustment, active vs. passive pickups, tonewood varieties like jacarandá and marupá), minimizing prompt token footprint and boosting dialogue naturalness.
+4. **Continuous Observability Pipeline (LLMOps):**
+   - Full instrumentation with **LangSmith** or **OpenTelemetry** to monitor end-to-end latency in real time, token expenditure, self-correction retry frequency in `hallucination_grader`, and user satisfaction scores.
+
+---
+
+## 9. Use of AI Coding Assistants
+
+In developing this project, a cutting-edge collaborative model was adopted using state-of-the-art AI assistance:
+
+- **Tools Used:**
+  - **Antigravity 2.0** integrated into the VSCode ecosystem, powered by **Gemini 3.8 Flash** and **Gemini Argon** models.
+- **Methodology (Agentic Pair Programming):**
+  - The assistant was leveraged as a coding companion to accelerate boilerplate development, scaffold ETL data pipelines, fast-track Hybrid RAG implementation (ChromaDB + BM25), and structure multi-stage nodes in LangGraph.
+  - **Strict Human Oversight:** The entirety of system architecture, relational data modeling, store business rules, anti-IDOR cybersecurity hardening, and strict LGPD compliance was designed, guided, reviewed, and validated line by line by me, ensuring complete quality, security, and technical compliance in the delivered codebase.
