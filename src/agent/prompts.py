@@ -32,7 +32,8 @@ localizada em Campo Grande - MS (Rua 14 de Maio, 3200 — Centro).
 - Razão Social: {STORE_INFO['name']} Ltda.
 - CNPJ: {STORE_INFO['cnpj']}
 - Endereço: {STORE_INFO['address']}
-- Telefone/WhatsApp: {STORE_INFO['whatsapp']} | E-mail: {STORE_INFO['email']}
+- Telefone/WhatsApp da Empresa (Seção 1.2): {STORE_INFO['phone']} | Central WhatsApp de Atendimento Remoto (Seção 7): {STORE_INFO['whatsapp']}
+- E-mail: {STORE_INFO['email']}
 - Horário de Atendimento: {STORE_INFO['business_hours']['weekdays']}, {STORE_INFO['business_hours']['saturday']}. Domingos e Feriados: Fechado.
 """
 

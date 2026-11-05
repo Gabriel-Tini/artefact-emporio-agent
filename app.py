@@ -69,23 +69,17 @@ async def on_chat_start():
         ]
     ).send()
 
-    welcome_content = f"""👋 **Bem-vindo à Central de Atendimento da {STORE_INFO['name']}!**
+    welcome_content = f"""👋 **Olá! Seja bem-vindo(a) ao Atendimento Virtual da {STORE_INFO['name']}!**
 *Sua música começa aqui.* 🎸🥁🎹
 
 📍 **Endereço:** {STORE_INFO['address']}  
-⏰ **Horário de Atendimento:** Segunda a Sexta (09h às 18h) | Sábado (09h às 13h)  
-📞 **WhatsApp Oficial:** {STORE_INFO['whatsapp']}
+⏰ **Horário de Atendimento:** Segunda a Sexta (09h às 18h) | Sábado (09h às 13h) | Domingos e Feriados: Fechado  
+📞 **Telefone/WhatsApp da Empresa (Seção 1.2):** {STORE_INFO['phone']} | 📱 **Central WhatsApp de Atendimento Remoto (Seção 7):** {STORE_INFO['whatsapp']}  
+✉️ **E-mail:** {STORE_INFO['email']}
 
----
-💡 **Sugestões para teste rápido no simulador:**
-- *"Vocês têm violão de nylon para iniciante? Qual o valor e desconto no PIX?"*
-- *"Vocês vendem jogo de cordas ou palhetas para guitarra?"* (Teste de escopo)
-- *"Gostaria de saber o status do meu pedido."* (Teste de identificação/LGPD)
-- *"Qual o valor do frete para Campo Grande e para Dourados?"*
-- *"Quero fazer uma reclamação sobre meu instrumento com defeito."* (Teste de transbordo)
-- *"Tem o contrabaixo Music Man Bass 1X disponível?"* (Teste de quarentena de dados)
+> ℹ️ *Aviso de Transparência: Você está conversando com o Assistente Virtual oficial da {STORE_INFO['name']}. Todas as informações de catálogo, estoque, fretes e condições de pagamento são consultadas em tempo real no sistema da loja. Caso deseje atendimento humano ou suporte especializado, basta solicitar a qualquer momento.*
 
-*(Você pode alterar o cliente simulado a qualquer momento no menu de configurações).*
+Como posso ajudar você hoje?
 """
     await cl.Message(content=welcome_content).send()
 
