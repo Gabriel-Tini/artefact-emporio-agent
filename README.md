@@ -1,3 +1,7 @@
+[ 🇺🇸 English ](README.md) | [ 🇧🇷 Português ](README.pt-BR.md)
+
+---
+
 # 🎸 Virtual Customer Service Agent — Empório da Música
 
 > **Production Prototype — AI Engineering & Data Governance**  
