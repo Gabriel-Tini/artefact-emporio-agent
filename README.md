@@ -14,8 +14,6 @@ O sistema implementa um **RAG Agêntico Multi-Estágio de Precisão Absoluta (Ze
   <img src="assets/arquitetura_sistema.jpg" alt="Visão Geral da Arquitetura do Sistema" width="650">
 </p>
 
-```
-
 ### Estrutura de Diretórios
 
 <p align="center">
