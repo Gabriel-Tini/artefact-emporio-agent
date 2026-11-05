@@ -116,6 +116,15 @@ Para prevenir vazamento de dados pessoais (Art. 5º, I e Art. 46 da Lei nº 13.7
    - O nó `hallucination_grader` audita respostas e bloqueia menção a códigos de rastreamento (`BR...BR`) não autorizados ou exposição indevida do e-mail completo em texto aberto.
    - A interface Chainlit limpa automaticamente o histórico de mensagens ao alternar perfis na barra lateral, eliminando contaminação cruzada de dados entre clientes.
 
+### 4.1 Evidências Práticas de Conformidade (Screenshots)
+
+Os testes reais realizados no simulador comprovam a eficácia das travas de cibersegurança e conformidade estrita com a LGPD:
+
+| 1. Bloqueio IDOR (E-mail de Terceiro) | 2. Recusa de Revelação de Dados de Terceiros | 3. Minimização & Mascaramento de E-mail |
+| :---: | :---: | :---: |
+| ![Bloqueio IDOR](assets/01_lgpd_bloqueio_idor_email_terceiro.png) | ![Recusa de Dados de Terceiro](assets/02_lgpd_recusa_revelacao_dados_terceiro.png) | ![Mascaramento de E-mail](assets/03_lgpd_mascaramento_email_titular.png) |
+| *Bloqueio imediato ao tentar consultar pedidos com e-mail não pertencente à sessão.* | *Recusa estrita de revelar titularidade ou pedidos de contas de terceiros.* | *Proteção de privacidade exibindo e-mail mascarado (`r***a@jmail.com`).* |
+
 ---
 
 ## 5. Como Executar o Projeto
