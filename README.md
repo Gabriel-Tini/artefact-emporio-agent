@@ -98,13 +98,33 @@ O manual oficial de políticas e procedimentos (8 páginas, 10 seções) é proc
 
 ---
 
-## 4. Como Executar o Projeto
+## 4. Segurança da Informação e Conformidade LGPD (Zero-Trust)
 
-### 4.1 Pré-requisitos
+Para prevenir vazamento de dados pessoais (Art. 5º, I e Art. 46 da Lei nº 13.709/2018), ataques de **IDOR (*Insecure Direct Object Reference*) / BOLA (*Broken Object Level Authorization*)** e fraudes de **Intercepção Logística de Cargas**, o sistema adota proteções determinísticas nativas:
+
+1. **Trava de Titularidade de Sessão (*Strict Session Ownership Binding*):**
+   - Em sessões autenticadas pelo número do WhatsApp (`customer_context`), a ferramenta `lookup_customer_orders` vincula a consulta estritamente ao `customer_id` do titular.
+   - Qualquer tentativa de consultar e-mails, telefones ou nomes de terceiros é bloqueada com `status = "unauthorized_mismatch"` **antes de realizar queries na tabela de pedidos (`orders`)**, impedindo vazamento de dados de outros clientes para o contexto do LLM.
+2. **Autenticação Baseada em Conhecimento de Dois Fatores (2FA) para Visitantes Anônimos:**
+   - Em sessões não identificadas (*Visitante Anônimo*), a apresentação de um e-mail ou telefone isolado é recusada com `status = "verification_required"`.
+   - Exige-se obrigatoriamente a combinação simultânea de **dois dados cadastrais do mesmo titular** (`E-mail + Telefone completo com DDD` ou `E-mail/Telefone + Nome Completo exato`).
+   - Bloqueio estrito de derivação de nome parcial a partir da parte local do e-mail e rejeição de telefones parciais sem DDD (`< 10 dígitos`).
+3. **Anti-Spoofing em Transbordo Humano e Exclusão de Dados:**
+   - Em `register_human_handoff`, solicitações de exclusão ou alteração de dados pessoais por usuários anônimos exigem comprovação prévia de 2 fatores, impedindo exclusões maliciosas de contas por terceiros.
+4. **Minimização de Dados e Guardrails Anti-Alucinação no Grafo:**
+   - O `context_router` mascara o e-mail do titular conectado (`l***s@jmail.com`) ao injetar o contexto da sessão no prompt do modelo.
+   - O nó `hallucination_grader` audita respostas e bloqueia menção a códigos de rastreamento (`BR...BR`) não autorizados ou exposição indevida do e-mail completo em texto aberto.
+   - A interface Chainlit limpa automaticamente o histórico de mensagens ao alternar perfis na barra lateral, eliminando contaminação cruzada de dados entre clientes.
+
+---
+
+## 5. Como Executar o Projeto
+
+### 5.1 Pré-requisitos
 - **Python 3.12** instalado (no Windows, disponível via `py -3.12`).
 - Chave de API do Google Gemini (`GOOGLE_API_KEY` ou `GEMINI_API_KEY`).
 
-### 4.2 Configuração do Ambiente Virtual e Segredos
+### 5.2 Configuração do Ambiente Virtual e Segredos
 ```powershell
 # 1. Criar e ativar o ambiente virtual Python 3.12 (caso ainda não esteja ativo)
 py -3.12 -m venv .venv
@@ -122,13 +142,13 @@ Copy-Item .env.example .env
 # GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-### 4.3 Execução do Pipeline de Ingestão e Auditoria
+### 5.3 Execução do Pipeline de Ingestão e Auditoria
 ```powershell
 python -m src.data.ingest
 ```
 *(Cria o banco relacional `data/processed/emporio.db` em modo WAL e exporta o laudo `data/processed/data_quality_report.json`)*.
 
-### 4.4 Inicialização do Simulador WhatsApp (Chainlit)
+### 5.4 Inicialização do Simulador WhatsApp (Chainlit)
 ```powershell
 chainlit run app.py -w
 ```
@@ -136,7 +156,7 @@ Acesse no navegador: **`http://localhost:8000`**
 
 ---
 
-## 5. Roteiro de Testes Manuais no Chainlit (10 Casos Críticos)
+## 6. Roteiro de Testes Manuais no Chainlit (10 Casos Críticos)
 
 Utilize a tabela abaixo no simulador para validar todas as regras de negócio, cálculos determinísticos e guardrails do agente:
 
@@ -149,6 +169,6 @@ Utilize a tabela abaixo no simulador para validar todas as regras de negócio, c
 | **5. Quarentena de Dados** | *"Estou procurando o contrabaixo Music Man Bass 1X. Tem para pronta entrega?"* | Detecta o modelo em quarentena técnica (`ID 135`): informa com transparência que o item está temporariamente indisponível para auditoria técnica de lote/especificações, bloqueando a venda enganosa e sugerindo alternativas aprovadas (como o *Music Man Bass 4X*). |
 | **6. Frete Campo Grande** | *"Quanto custa o frete para entregar aqui no Centro de Campo Grande?"* | Consulta `calculate_shipping`: explica que na Região Metropolitana de Campo Grande - MS pedidos **acima de `R$ 500,00` têm Frete Grátis** e pedidos abaixo de `R$ 500,00` têm **taxa fixa de `R$ 35,00`**, com entrega por **motoboy próprio em 1 a 3 dias úteis**. |
 | **7. Frete Outras Cidades** | *"Vocês entregam em Dourados - MS? Quais as opções e prazos?"* | Lista as 3 modalidades oficiais (Seção 5.2): **SEDEX (Correios)** (`2 a 5 dias úteis`), **Jadlog (.package)** (`3 a 8 dias úteis`) e **PAC (Correios)** (`5 a 12 dias úteis`), todas com rastreamento e seguro contra extravio/avaria inclusos. |
-| **8. LGPD e Consulta de Pedido** | *"Qual o status do meu pedido? Meu e-mail é lucas.mendes@jmail.com"* | Valida a identidade completa sob a LGPD (rejeitando números curtos/parciais) e consulta `lookup_customer_orders`: retorna o pedido **`order_id = 4`** (*Giannini GF-3D Dreadnought Sunburst*, `R$ 799,90`, status `delivered` e código de rastreio **`BRQM7890123BR`**). |
+| **8. LGPD e Consulta de Pedido (Zero-Trust / Anti-IDOR)** | *"Qual o status do meu pedido? Meu e-mail é lucas.mendes@jmail.com e meu telefone é (67) 99812-3456"* | Aplica blindagem determinística LGPD (Zero-Trust): se conectado como titular no WhatsApp, trava estritamente ao `customer_id` da sessão (bloqueando com `unauthorized_mismatch` qualquer tentativa de consultar e-mails vazados de terceiros sem carregar dados do banco). Se em modo **Visitante Anônimo**, exige **dois fatores cadastrais simultâneos do mesmo titular** (ex: E-mail + Telefone ou E-mail + Nome Completo) antes de retornar o pedido **`order_id = 4`** (`BRQM7890123BR`). |
 | **9. Arrependimento e Trocas** | *"Comprei um ukulele pela internet e chegou ontem, mas me arrependi. Posso devolver?"* | Consulta o RAG Híbrido (`search_store_policies`, Seção 4.1): confirma o direito de arrependimento em até **7 dias corridos** após o recebimento sem necessidade de justificativa, com reembolso integral em até **10 dias úteis** e frete de devolução por conta da loja. |
 | **10. Reclamação / Transbordo** | *"O meu violão chegou com uma rachadura no tampo e o afinador quebrado. Quero fazer uma reclamação formal!"* | Acolhe o cliente com empatia (Seção 7.3) e aciona `register_human_handoff`: grava o chamado no banco (`handoff_tickets`), fornece o protocolo único no formato **`EM-YYYYMMDD-XXXXXX`** e informa o SLA oficial de retorno em **até 24 horas úteis**. |

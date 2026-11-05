@@ -86,9 +86,12 @@ Como posso ajudar você hoje?
 
 @cl.on_settings_update
 async def setup_agent(settings):
-    """Atualiza o perfil do cliente simulado com correspondência exata."""
+    """Atualiza o perfil do cliente simulado com correspondência exata e isolamento de sessão LGPD."""
     selected_val = settings.get("simulated_customer")
     sample_customers = cl.user_session.get("sample_customers", [])
+
+    # Limpar o histórico de mensagens ao trocar de perfil para impedir vazamento de dados entre sessões (LGPD)
+    cl.user_session.set("messages", [])
 
     if selected_val and selected_val != "Visitante Anônimo (Não Identificado)":
         for c in sample_customers:
@@ -97,14 +100,15 @@ async def setup_agent(settings):
                 await cl.Message(
                     content=(
                         f"📱 **Simulador WhatsApp**: Número conectado alterado para "
-                        f"`{c['name']}` ({c['phone']}) - {c['city']}."
+                        f"`{c['name']}` ({c['phone']}) - {c['city']}. "
+                        "*(Histórico anterior isolado por proteção LGPD)*."
                     )
                 ).send()
                 return
 
     cl.user_session.set("customer_context", None)
     await cl.Message(
-        content="📱 **Simulador WhatsApp**: Sessão alterada para **Visitante Anônimo**."
+        content="📱 **Simulador WhatsApp**: Sessão alterada para **Visitante Anônimo**. *(Histórico anterior isolado por proteção LGPD)*."
     ).send()
 
 

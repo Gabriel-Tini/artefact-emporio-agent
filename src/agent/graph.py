@@ -114,10 +114,22 @@ def get_llm():
 # --- NÓS DO GRAFO ---
 
 
+def _mask_email(email: Optional[str]) -> str:
+    """Mascara um endereço de e-mail sob o princípio da minimização de dados (Art. 6º, III da LGPD)."""
+    if not email or "@" not in email:
+        return "não informado"
+    local, domain = email.strip().split("@", 1)
+    if len(local) <= 2:
+        masked_local = local[0] + "***"
+    else:
+        masked_local = f"{local[0]}***{local[-1]}"
+    return f"{masked_local}@{domain}"
+
+
 def context_router(state: AgentState) -> Dict[str, Any]:
     """
     Nó 1: Roteador e Injeção de Contexto.
-    Constrói o `system_prompt` enriquecido sem poluir a lista `state.messages`.
+    Constrói o `system_prompt` enriquecido sem poluir a lista `state.messages` e aplica minimização de PII (LGPD).
     """
     now = datetime.now()
     weekday = now.weekday()  # 0 = Seg, 5 = Sáb, 6 = Dom
@@ -135,12 +147,15 @@ def context_router(state: AgentState) -> Dict[str, Any]:
         else "Fechado (Fora do Expediente - Informar horário de retorno)"
     )
 
-    customer_info_str = "Nenhum cliente pré-autenticado na sessão."
+    customer_info_str = "Visitante Anônimo (Nenhum cliente pré-autenticado na sessão — exigir 2 fatores cadastrais para consulta de pedidos)."
     if state.customer_context:
         ctx = state.customer_context
+        masked_email = _mask_email(ctx.get("email"))
         customer_info_str = (
-            f"Cliente conectado no WhatsApp: {ctx.get('name')} | "
-            f"Telefone: {ctx.get('phone')} | E-mail: {ctx.get('email')} | Cidade: {ctx.get('city')}"
+            f"Cliente autenticado pelo WhatsApp (customer_id={ctx.get('customer_id')}): "
+            f"{ctx.get('name')} | Telefone: {ctx.get('phone')} | "
+            f"E-mail (mascarado LGPD): {masked_email} | Cidade: {ctx.get('city')} "
+            "[SESSÃO VINCULADA AO TITULAR: consultas de pedidos são restritas exclusivamente a este cliente]."
         )
 
     context_note = (
@@ -196,12 +211,15 @@ def deterministic_anti_hallucination_check(
     last_ai_message: str,
     tools_called: list,
     all_messages: Sequence[BaseMessage] = (),
+    customer_context: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
-    Checagem de conformidade determinística:
+    Checagem de conformidade determinística e Segurança LGPD (Zero-Trust):
     1. Impede citação de preços de produtos sem chamada de ferramenta na conversa (permitindo valores de política e valores ditos pelo usuário).
     2. Impede confirmação de venda de acessórios avulsos.
     3. Impede confirmação de estoque/venda de produtos em quarentena técnica.
+    4. Impede citação de códigos de rastreamento (`BR...BR`) sem retorno autorizado de `lookup_customer_orders`.
+    5. Impede exposição do e-mail completo em texto plano do titular da sessão se ele não o digitou na conversa.
     """
     text_norm = unaccent_text(last_ai_message)
 
@@ -210,10 +228,24 @@ def deterministic_anti_hallucination_check(
     )
 
     user_numbers = set()
+    user_texts_lower = []
     for m in all_messages:
         if isinstance(m, HumanMessage) and m.content:
-            for num in re.findall(r"\d+", str(m.content).replace(".", "")):
+            content_str = str(m.content)
+            user_texts_lower.append(content_str.lower())
+            for num in re.findall(r"\d+", content_str.replace(".", "")):
                 user_numbers.add(num)
+
+    # Coletar códigos de rastreio legitimamente retornados por ToolMessages autorizadas na conversa
+    authorized_tracking_codes = set()
+    for m in all_messages:
+        if isinstance(m, ToolMessage) and m.content:
+            tm_str = str(m.content)
+            if '"status": "success"' in tm_str or "'status': 'success'" in tm_str:
+                for code in re.findall(
+                    r"\bBR[A-Z0-9]{9}BR\b", tm_str, flags=re.IGNORECASE
+                ):
+                    authorized_tracking_codes.add(code.upper())
 
     # 1. Checar menção a preços em R$ sem consulta a ferramentas
     if not has_any_tool_in_history:
@@ -276,12 +308,38 @@ def deterministic_anti_hallucination_check(
                     "apresentado como disponível para venda."
                 )
 
+    # 4. Checar vazamento ou alucinação de código de rastreio (LGPD Anti-IDOR)
+    mentioned_codes = re.findall(
+        r"\bBR[A-Z0-9]{9}BR\b", last_ai_message, flags=re.IGNORECASE
+    )
+    for code in mentioned_codes:
+        code_up = code.upper()
+        # Permitir apenas o código de exemplo documental da política (BR4K7M2X9P1BR) ou códigos autorizados no turno
+        if (
+            code_up != "BR4K7M2X9P1BR"
+            and code_up not in authorized_tracking_codes
+        ):
+            return (
+                f"FAIL: Violação de segurança LGPD — o código de rastreamento '{code_up}' não consta em nenhuma "
+                "consulta autorizada ao titular desta sessão. NUNCA invente ou revele códigos de rastreamento sem autorização."
+            )
+
+    # 5. Checar exposição desnecessária do e-mail completo do titular da sessão (Minimização de Dados LGPD)
+    if customer_context and customer_context.get("email"):
+        session_email = str(customer_context["email"]).strip().lower()
+        if session_email and session_email in last_ai_message.lower():
+            if not any(session_email in ut for ut in user_texts_lower):
+                return (
+                    f"FAIL: Minimização de Dados LGPD — não exponha o e-mail completo ({session_email}) em texto aberto "
+                    "caso o cliente não o tenha informado diretamente no chat. Use versão mascarada ou cite apenas o nome do titular."
+                )
+
     return "PASS"
 
 
 def hallucination_grader(state: AgentState) -> Dict[str, Any]:
     """
-    Nó 3: Grader / Auditor Anti-Alucinação.
+    Nó 3: Grader / Auditor Anti-Alucinação e Conformidade LGPD.
     Valida a conformidade da resposta gerada. Caso exceda o limite de retentativas (2),
     substitui in-place a mensagem reprovada por `SAFE_FALLBACK_MESSAGE`, impedindo vazamento ao cliente.
     """
@@ -301,6 +359,7 @@ def hallucination_grader(state: AgentState) -> Dict[str, Any]:
         last_text,
         state.tools_called,
         state.messages,
+        state.customer_context,
     )
 
     if det_result.startswith("FAIL"):
