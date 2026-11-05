@@ -10,6 +10,8 @@
 
 O sistema implementa um **RAG Agêntico Multi-Estágio de Precisão Absoluta (Zero Hallucination)** operando como assistente virtual via WhatsApp para atendimento a clientes (B2C) e suporte operacional à equipe da loja:
 
+![Visão Geral da Arquitetura](assets/arquitetura_visao_geral.png)
+
 ```text
 [ Usuário / WhatsApp (Chainlit) ]
               │
