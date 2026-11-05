@@ -17,32 +17,10 @@ O sistema implementa um **RAG Agêntico Multi-Estágio de Precisão Absoluta (Ze
 ```
 
 ### Estrutura de Diretórios
-```text
-├── data/
-│   ├── raw/                               # Insumos originais imutáveis (6 arquivos .csv e políticas_da_loja.pdf)
-│   └── processed/                         # Artefatos gerados (emporio.db, chroma_db/, data_quality_report.json)
-├── src/
-│   ├── config.py                          # Single Source of Truth (caminhos, metadados da loja, regras e IA)
-│   ├── data/
-│   │   ├── database.py                    # SQLite com WAL Mode, busy_timeout=5000 e funções unaccent() / clean_digits()
-│   │   ├── auditor.py                     # Motor heurístico ProductAuditor (marcas explícitas/implícitas e specs)
-│   │   └── ingest.py                      # Pipeline ETL e geração do laudo data_quality_report.json
-│   ├── rag/
-│   │   ├── pdf_parser.py                  # Decomposição hierárquica das 10 seções do PDF (15 chunks)
-│   │   └── retriever.py                   # Motor Híbrido BM25 (tokenize_pt) + ChromaDB com RRF e threading.Lock()
-│   ├── tools/
-│   │   ├── catalog_tools.py               # Busca tolerante a acentos, bloqueio de acessórios e cálculo Decimal PIX/Cartão
-│   │   ├── order_tools.py                 # Cálculo de frete (Campo Grande vs Nacional) e consulta LGPD blindada
-│   │   └── policy_tools.py                # Consulta ao RAG Híbrido e abertura de protocolo EM-YYYYMMDD-XXXXXX
-│   └── agent/
-│       ├── state.py                       # AgentState tipado (isolamento de system_prompt e messages)
-│       ├── prompts.py                     # Diretrizes operacionais do Executor e do Grader
-│       └── graph.py                       # StateGraph Multi-Estágio com auditoria determinística e fallback in-place
-├── app.py                                 # Simulador WhatsApp em Chainlit com seletor de perfil e rastreio de Steps
-├── chainlit.md                            # Tela institucional e canais de transparência no Chainlit
-├── requirements.txt                       # Dependências do projeto
-└── .env.example                           # Template seguro de variáveis de ambiente
-```
+
+<p align="center">
+  <img src="assets/estrutura_diretorios.jpg" alt="Estrutura de Diretórios do Projeto" width="700">
+</p>
 
 ---
 
