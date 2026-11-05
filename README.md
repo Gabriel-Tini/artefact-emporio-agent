@@ -14,33 +14,6 @@ O sistema implementa um **RAG Agêntico Multi-Estágio de Precisão Absoluta (Ze
   <img src="assets/arquitetura_sistema.jpg" alt="Visão Geral da Arquitetura do Sistema" width="650">
 </p>
 
-```text
-[ Usuário / WhatsApp (Chainlit) ]
-              │
-              ▼
-    [ 1. context_router ] ── (Injeta Horário de Expediente e Perfil LGPD em state.system_prompt)
-              │
-              ▼
-   [ 2. assistant_executor ] ◄──────────────────────┐
-   (Gemini 3.5 Flash Lite)                          │ (Laço de Autocorreção
-              │                                     │  até 2 tentativas;
-       [ Tool Calling ]                             │  fallback seguro in-place
-              ▼                                     │  se exceder limite)
-       [ 3. tools_node ]                            │
-    ┌─────────┴────────────────────────────────┐    │
-    │  • search_catalog (SQLite Aprovados)     │    │
-    │  • calculate_payment_conditions (PIX)    │    │
-    │  • calculate_shipping (Campo Grande/Ext) │    │
-    │  • lookup_customer_orders (LGPD)         │    │
-    │  • search_store_policies (Hybrid RAG)    │    │
-    │  • register_human_handoff (SLA 24h)      │    │
-    └─────────┬────────────────────────────────┘    │
-              │                                     │
-              ▼                                     │
-  [ 4. hallucination_grader ] ──────────────────────┘
-              │ (Aprovado)
-              ▼
-      [ Resposta Final ]
 ```
 
 ### Estrutura de Diretórios
