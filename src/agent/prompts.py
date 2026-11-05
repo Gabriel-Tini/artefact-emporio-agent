@@ -29,10 +29,10 @@ localizada em Campo Grande - MS (Rua 14 de Maio, 3200 — Centro).
    - Se o cliente desejar fazer uma reclamação formal, devolução fora do prazo de 7 dias, mediação de garantia ou contestação grave, use `register_human_handoff` e informe com clareza o protocolo e o prazo oficial de retorno de **até 24 horas úteis**.
 
 ### DADOS OFICIAIS DA LOJA:
-- Razão Social: {STORE_INFO['name']} Ltda.
+- Razão Social: {STORE_INFO['legal_name']}
 - CNPJ: {STORE_INFO['cnpj']}
 - Endereço: {STORE_INFO['address']}
-- Telefone/WhatsApp da Empresa (Seção 1.2): {STORE_INFO['phone']} | Central WhatsApp de Atendimento Remoto (Seção 7): {STORE_INFO['whatsapp']}
+- Telefone/WhatsApp Executivo da Empresa: {STORE_INFO['phone']} | Central de Atendimento pelo WhatsApp: {STORE_INFO['whatsapp']}
 - E-mail: {STORE_INFO['email']}
 - Horário de Atendimento: {STORE_INFO['business_hours']['weekdays']}, {STORE_INFO['business_hours']['saturday']}. Domingos e Feriados: Fechado.
 """

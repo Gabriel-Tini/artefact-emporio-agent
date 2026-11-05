@@ -69,15 +69,15 @@ async def on_chat_start():
         ]
     ).send()
 
-    welcome_content = f"""👋 **Olá! Seja bem-vindo(a) ao Atendimento Virtual da {STORE_INFO['name']}!**
+    welcome_content = f"""👋 **Bem-vindo à Central de Atendimento da {STORE_INFO['name']}!**
 *Sua música começa aqui.* 🎸🥁🎹
 
 📍 **Endereço:** {STORE_INFO['address']}  
-⏰ **Horário de Atendimento:** Segunda a Sexta (09h às 18h) | Sábado (09h às 13h) | Domingos e Feriados: Fechado  
-📞 **Telefone/WhatsApp da Empresa (Seção 1.2):** {STORE_INFO['phone']} | 📱 **Central WhatsApp de Atendimento Remoto (Seção 7):** {STORE_INFO['whatsapp']}  
-✉️ **E-mail:** {STORE_INFO['email']}
+⏰ **Horário de Atendimento:** Segunda a Sexta (09h às 18h) | Sábado (09h às 13h)  
+📞 **Telefone/WhatsApp Executivo da Empresa:** {STORE_INFO['phone']} | 📱 **Central de Atendimento pelo WhatsApp:** {STORE_INFO['whatsapp']}  
+✉️ **E-mail Oficial:** {STORE_INFO['email']}
 
-> ℹ️ *Aviso de Transparência: Você está conversando com o Assistente Virtual oficial da {STORE_INFO['name']}. Todas as informações de catálogo, estoque, fretes e condições de pagamento são consultadas em tempo real no sistema da loja. Caso deseje atendimento humano ou suporte especializado, basta solicitar a qualquer momento.*
+> ℹ️ **Aviso de Transparência:** Você está no canal oficial de atendimento virtual da **{STORE_INFO['legal_name']}** (CNPJ `{STORE_INFO['cnpj']}`). Para sua segurança, nossos únicos números oficiais são o Telefone/WhatsApp Executivo da loja física (`{STORE_INFO['phone']}`) e esta Central de Atendimento Remoto via WhatsApp (`{STORE_INFO['whatsapp']}`). Todas as informações de catálogo, estoque, pagamentos e pedidos são consultadas em tempo real em nosso sistema sob proteção da LGPD.
 
 Como posso ajudar você hoje?
 """
