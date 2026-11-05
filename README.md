@@ -195,6 +195,7 @@ In developing this project, a cutting-edge collaborative model was adopted using
 
 - **Tools Used:**
   - **Antigravity 2.0** integrated into the VSCode ecosystem, powered by **Gemini 3.8 Flash** and **Gemini Argon** models.
-- **Methodology (Agentic Pair Programming):**
+- **Methodology (Agentic Pair Programming & Human-in-the-Loop):**
   - The assistant was leveraged as a coding companion to accelerate boilerplate development, scaffold ETL data pipelines, fast-track Hybrid RAG implementation (ChromaDB + BM25), and structure multi-stage nodes in LangGraph.
+  - **Human-in-the-Loop (HITL) Development:** The programming workflow predominantly adopted a Human-in-the-Loop approach, establishing intermediate checkpoints and deliberate stops for human confirmation and approval prior to enacting substantive code and architectural changes.
   - **Strict Human Oversight:** The entirety of system architecture, relational data modeling, store business rules, anti-IDOR cybersecurity hardening, and strict LGPD compliance was designed, guided, reviewed, and validated line by line by me, ensuring complete quality, security, and technical compliance in the delivered codebase.

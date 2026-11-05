@@ -195,6 +195,7 @@ No desenvolvimento deste projeto, adotei um modelo colaborativo de ponta com aux
 
 - **Ferramentas Utilizadas:**
   - **Antigravity 2.0** integrado ao ecossistema VSCode, utilizando os modelos **Gemini 3.8 Flash** e **Gemini Argon**.
-- **Metodologia de Uso (Pair Programming Agêntico):**
+- **Metodologia de Uso (Pair Programming Agêntico & Human-in-the-Loop):**
   - O assistente foi empregado como um parceiro de programação para aceleração de código repetitivo, scaffold de pipelines ETL, implementação ágil do RAG Híbrido (ChromaDB + BM25) e estruturação de nós no LangGraph.
+  - **Abordagem Human-in-the-Loop (HIL):** Em grande parte da programação, adotamos uma abordagem de desenvolvimento HIL com checkpoints e paradas para confirmação e validação humana antes da aplicação de alterações de código ou refinamentos arquiteturais.
   - **Supervisão Humana Rigorosa:** Toda a concepção arquitetural, modelagem de dados, regras de negócio da loja, blindagem de cibersegurança contra IDOR e conformidade com a LGPD foram concebidas, direcionadas, revisadas e validadas linha por linha por mim, garantindo total controle de qualidade, segurança e conformidade técnica do código entregue.
