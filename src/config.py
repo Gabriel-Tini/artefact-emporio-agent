@@ -331,7 +331,7 @@ class AIModelConfig:
     """Configurações de LLM, Embeddings e controle de retentativas do grafo."""
 
     api_key: str = _api_key
-    llm_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    llm_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     embedding_model: str = os.getenv(
         "GEMINI_EMBEDDING_MODEL", "models/gemini-embedding-001"
     )
